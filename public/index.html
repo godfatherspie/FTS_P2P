@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Send File</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      padding: 40px;
+      margin: 0;
+    }
+  
+    h2 {
+      margin-bottom: 20px;
+      color: #222;
+    }
+  
+    input[type="file"],
+    input[type="password"],
+    input[type="number"] {
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 300px;
+      max-width: 100%;
+      display: block;
+      margin-bottom: 20px;
+    }
+  
+    button#shareBtn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 18px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  
+    button#shareBtn:hover {
+      background-color: #0056b3;
+    }
+  
+    #link {
+      margin-top: 20px;
+      font-size: 14px;
+      word-break: break-all;
+    }
+  </style>
+  
+</head>
+<body>
+  <h2>Select a file to share</h2>
+  <input type="file" id="fileInput"><br><br>
+  <input type="password" id="password" placeholder="Set a password"><br><br>
+  <input type="number" id="expiry" placeholder="Link expiry in seconds (e.g. 300)"><br><br>
+  <button id="shareBtn">Generate Link</button>
+  <p id="link"></p>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const shareBtn = document.getElementById('shareBtn');
+    const linkP = document.getElementById('link');
+    const passwordInput = document.getElementById('password');
+    const expiryInput = document.getElementById('expiry');
+
+    shareBtn.onclick = () => {
+      const file = fileInput.files[0];
+      const password = passwordInput.value;
+      const expiry = parseInt(expiryInput.value, 10);
+
+      if (!file) return alert('Please select a file');
+      if (!password) return alert('Please enter a password');
+      if (isNaN(expiry) || expiry <= 0) return alert('Please enter a valid expiry time');
+
+      const roomId = crypto.randomUUID();
+      localStorage.setItem('fileInfo', JSON.stringify({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        password,
+        expiry
+      }));
+      window.location.href = `/transfer/${roomId}`;
+    };
+  </script>
+</body>
+</html>

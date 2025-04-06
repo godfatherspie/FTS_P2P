@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Transfer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fdfefe;
+      color: #333;
+      padding: 40px;
+      margin: 0;
+    }
+  
+    h2#status {
+      font-size: 20px;
+      margin-bottom: 25px;
+      color: #222;
+    }
+  
+    input[type="password"],
+    input[type="file"] {
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 300px;
+      max-width: 100%;
+      display: block;
+      margin-bottom: 15px;
+    }
+  
+    button#verifyBtn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 18px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+  
+    button#verifyBtn:hover {
+      background-color: #0056b3;
+    }
+  
+    #error {
+      margin-top: 10px;
+      color: red;
+      font-size: 14px;
+    }
+  
+    #senderUI p,
+    #receiverUI p,
+    #authUI p {
+      margin: 8px 0;
+    }
+  
+    progress#progressBar {
+      width: 100%;
+      height: 20px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  
+    a#downloadLink {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+  
+    a#downloadLink:hover {
+      background-color: #218838;
+    }
+  
+    .hidden {
+      display: none;
+    }
+  </style>
+  
+</head>
+<body>
+  <h2 id="status">Initializing...</h2>
+  <div id="authUI" class="hidden">
+    <input type="password" id="recvPassword" placeholder="Enter password">
+    <button id="verifyBtn">Verify</button>
+    <p id="error" style="color:red;"></p>
+  </div>
+
+  <div id="senderUI" class="hidden">
+    <p>Waiting for receiver to connect...</p>
+    <p>Sending: <span id="fileName"></span></p>
+    <input type="file" id="resendFile">
+  </div>
+
+  <div id="receiverUI" class="hidden">
+    <p>Receiving file: <span id="fileNameRecv"></span></p>
+    <progress id="progressBar" value="0" max="100"></progress>
+    <p><a id="downloadLink" class="hidden" download>Download File</a></p>
+  </div>
+
+  <script>
+    const roomId = window.location.pathname.split('/').pop();
+    const ws = new WebSocket(`ws://${window.location.hostname}:3000`);
+    const fileInfo = JSON.parse(localStorage.getItem('fileInfo') || 'null');
+    const isSender = fileInfo !== null;
+
+    const senderUI = document.getElementById('senderUI');
+    const receiverUI = document.getElementById('receiverUI');
+    const fileName = document.getElementById('fileName');
+    const fileNameRecv = document.getElementById('fileNameRecv');
+    const downloadLink = document.getElementById('downloadLink');
+    const progressBar = document.getElementById('progressBar');
+    const status = document.getElementById('status');
+    const authUI = document.getElementById('authUI');
+    const recvPassword = document.getElementById('recvPassword');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const errorText = document.getElementById('error');
+    const resendInput = document.getElementById('resendFile');
+
+    let fileBuffer = [];
+    let receivedBytes = 0;
+    let receivedFileInfo = null;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'join', roomId }));
+
+      if (isSender) {
+        status.textContent = 'You are the sender';
+        senderUI.classList.remove('hidden');
+        fileName.textContent = fileInfo.name;
+
+        ws.send(JSON.stringify({
+          type: 'init',
+          roomId,
+          payload: {
+            password: fileInfo.password,
+            expiry: fileInfo.expiry
+          }
+        }));
+      } else {
+        status.textContent = 'Waiting for password';
+        authUI.classList.remove('hidden');
+      }
+    };
+
+    verifyBtn.onclick = () => {
+      const password = recvPassword.value;
+      if (!password) return alert('Enter password');
+      ws.send(JSON.stringify({ type: 'verify', roomId, payload: { password } }));
+    };
+
+    ws.onmessage = async (message) => {
+      const { type, payload } = JSON.parse(message.data);
+
+      if (type === 'error') {
+        errorText.textContent = payload;
+        return;
+      }
+
+      if (type === 'verified') {
+        authUI.classList.add('hidden');
+        receiverUI.classList.remove('hidden');
+        status.textContent = 'You are the receiver';
+      }
+
+      if (type === 'start' && isSender) {
+        alert("Please reselect the file to begin transfer.");
+        resendInput.addEventListener('change', async () => {
+          const file = resendInput.files[0];
+          fileName.textContent = file.name;
+
+          ws.send(JSON.stringify({
+            type: 'file-info',
+            roomId,
+            payload: {
+              name: file.name,
+              type: file.type,
+              size: file.size
+            }
+          }));
+
+          const reader = file.stream().getReader();
+          async function sendChunks() {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              ws.send(JSON.stringify({ type: 'file-chunk', roomId, payload: Array.from(value) }));
+            }
+            ws.send(JSON.stringify({ type: 'done', roomId }));
+          }
+          sendChunks();
+        });
+      }
+
+      if (type === 'file-info') {
+        receivedFileInfo = payload;
+        fileNameRecv.textContent = payload.name;
+      }
+
+      if (type === 'file-chunk') {
+        const chunk = new Uint8Array(payload);
+        fileBuffer.push(chunk);
+        receivedBytes += chunk.length;
+        const total = receivedFileInfo?.size || 1;
+        progressBar.value = Math.floor((receivedBytes / total) * 100);
+      }
+
+      if (type === 'done') {
+        const blob = new Blob(fileBuffer, {
+          type: receivedFileInfo?.type || 'application/octet-stream'
+        });
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = receivedFileInfo?.name || 'download';
+        downloadLink.classList.remove('hidden');
+        downloadLink.textContent = 'Click to download';
+        status.textContent = 'Transfer complete!';
+      }
+    };
+  </script>
+</body>
+</html>
