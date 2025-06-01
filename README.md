@@ -32,9 +32,9 @@ A simple and secure peer-to-peer file transfer web app using WebSockets. Files a
 
 ### Server
 
-git clone https://github.com/godfatherspie/FTS_P2P.git
-cd FTS_P2P
-npm install
-.\kill_port_3000.bat
+   - git clone https://github.com/godfatherspie/FTS_P2P.git
+   - cd FTS_P2P
+   - npm install
+   - .\kill_port_3000.bat
 
 Navigate to "localhost:3000" on your favourite web browser and enjoy!
