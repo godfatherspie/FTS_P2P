@@ -2,62 +2,98 @@
 <html>
 <head>
   <title>Send File</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f6f8;
-      color: #333;
-      padding: 40px;
-      margin: 0;
-    }
-  
-    h2 {
-      margin-bottom: 20px;
-      color: #222;
-    }
-  
-    input[type="file"],
-    input[type="password"],
-    input[type="number"] {
-      padding: 10px;
-      font-size: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      width: 300px;
-      max-width: 100%;
-      display: block;
-      margin-bottom: 20px;
-    }
-  
-    button#shareBtn {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 18px;
-      font-size: 15px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  
-    button#shareBtn:hover {
-      background-color: #0056b3;
-    }
-  
-    #link {
-      margin-top: 20px;
-      font-size: 14px;
-      word-break: break-all;
-    }
-  </style>
+<style>
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #e0e7ff 0%, #fdf6e3 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+  }
+
+  .container {
+    background: #fff;
+    padding: 36px 32px 32px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(60, 60, 120, 0.12), 0 1.5px 6px rgba(0,0,0,0.04);
+    min-width: 340px;
+    max-width: 400px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h2 {
+    margin-bottom: 28px;
+    color: #2d3748;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    font-size: 1.5rem;
+  }
+
+  input[type="file"],
+  input[type="password"],
+  input[type="number"] {
+    padding: 12px;
+    font-size: 1rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 18px;
+    background: #f8fafc;
+    transition: border 0.2s;
+    box-sizing: border-box;
+  }
+  input[type="file"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus {
+    border-color: #7c3aed;
+    outline: none;
+  }
+
+  button#shareBtn {
+    background: linear-gradient(90deg, #6366f1 0%, #3b82f6 100%);
+    color: #fff;
+    padding: 12px 0;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+    transition: background 0.2s, transform 0.1s;
+  }
+  button#shareBtn:hover {
+    background: linear-gradient(90deg, #4f46e5 0%, #2563eb 100%);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  #link {
+    margin-top: 20px;
+    font-size: 15px;
+    word-break: break-all;
+    color: #2563eb;
+    text-align: center;
+    font-weight: 500;
+  }
+</style>
   
 </head>
 <body>
-  <h2>Select a file to share</h2>
-  <input type="file" id="fileInput"><br><br>
-  <input type="password" id="password" placeholder="Set a password"><br><br>
-  <input type="number" id="expiry" placeholder="Link expiry in seconds (e.g. 300)"><br><br>
-  <button id="shareBtn">Generate Link</button>
-  <p id="link"></p>
+  <div class = "container">
+    <h2>Select a file to share</h2>
+    <input type="file" id="fileInput"><br><br>
+    <input type="password" id="password" placeholder="Set a password"><br><br>
+    <input type="number" id="expiry" placeholder="Link expiry in seconds (e.g. 300)"><br><br>
+    <button id="shareBtn">Generate Link</button>
+    <p id="link"></p>
+  </div>
 
   <script>
     const fileInput = document.getElementById('fileInput');
